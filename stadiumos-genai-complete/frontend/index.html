@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>StadiumOS GenAI — FIFA World Cup 2026 Operations &amp; Fan Experience</title>
+<meta name="description" content="GenAI-enabled stadium operations and fan-experience console for FIFA World Cup 2026 host venues." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* ---- Design tokens ------------------------------------------------ */
+    --pitch-black: #0A1512;
+    --pitch-green-900: #0F241C;
+    --pitch-green-800: #163527;
+    --pitch-green-700: #1E4632;
+    --floodlight: #F5F7F2;
+    --floodlight-dim: #C9D2CB;
+    --gold: #C9A648;
+    --gold-bright: #E6C567;
+    --assist-blue: #2F6FED;
+    --alert-coral: #FF6B4A;
+    --alert-critical: #FF3B30;
+    --alert-medium: #F5B942;
+    --alert-low: #4CAF7D;
+
+    --font-display: 'Oswald', 'Arial Narrow', sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+    --radius: 10px;
+    --focus-ring: 3px solid var(--gold-bright);
+
+    --transition: 180ms ease;
+  }
+
+  [data-contrast="high"] {
+    --pitch-black: #000000;
+    --pitch-green-900: #000000;
+    --pitch-green-800: #0A0A0A;
+    --pitch-green-700: #141414;
+    --floodlight: #FFFFFF;
+    --floodlight-dim: #FFFFFF;
+    --gold: #FFD24C;
+    --gold-bright: #FFD24C;
+    --assist-blue: #5B9BFF;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  body {
+    margin: 0;
+    background: var(--pitch-black);
+    color: var(--floodlight);
+    font-family: var(--font-body);
+    font-size: var(--base-font-size, 16px);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  [data-textsize="large"] { --base-font-size: 18px; }
+  [data-textsize="xlarge"] { --base-font-size: 21px; }
+
+  a { color: var(--gold-bright); }
+
+  .skip-link {
+    position: absolute;
+    left: -999px;
+    top: 0;
+    background: var(--gold-bright);
+    color: var(--pitch-black);
+    padding: 12px 20px;
+    font-weight: 700;
+    z-index: 100;
+    border-radius: 0 0 8px 0;
+  }
+  .skip-link:focus {
+    left: 0;
+  }
+
+  :focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* ---- Ticker (signature element) --------------------------------------- */
+  .ticker {
+    background: var(--pitch-black);
+    border-bottom: 1px solid var(--pitch-green-700);
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 6px 0;
+  }
+  .ticker__track {
+    display: inline-block;
+    padding-left: 100%;
+    animation: ticker-scroll 38s linear infinite;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.04em;
+    color: var(--floodlight-dim);
+  }
+  .ticker__track span { margin-right: 3rem; }
+  .ticker__track .dot { color: var(--gold); margin: 0 0.6rem; }
+  @keyframes ticker-scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+  }
+
+  /* ---- Header ------------------------------------------------------- */
+  header.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(180deg, var(--pitch-green-900), var(--pitch-black));
+    border-bottom: 1px solid var(--pitch-green-700);
+    flex-wrap: wrap;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .brand__mark {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: conic-gradient(from 180deg, var(--gold), var(--assist-blue), var(--gold));
+    display: grid; place-items: center;
+    color: var(--pitch-black);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .brand__title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.35rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  .brand__subtitle {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--floodlight-dim);
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-family: var(--font-mono);
+    background: var(--pitch-green-800);
+    border: 1px solid var(--pitch-green-700);
+  }
+  .status-pill__dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--alert-low);
+    box-shadow: 0 0 6px var(--alert-low);
+  }
+  .status-pill[data-state="offline"] .status-pill__dot { background: var(--alert-medium); box-shadow: 0 0 6px var(--alert-medium); }
+
+  .toolbar {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .toolbar button, .toolbar select {
+    background: var(--pitch-green-800);
+    border: 1px solid var(--pitch-green-700);
+    color: var(--floodlight);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-family: var(--font-body);
+    cursor: pointer;
+  }
+  .toolbar button:hover { border-color: var(--gold); }
+  .toolbar button[aria-pressed="true"] { background: var(--gold); color: var(--pitch-black); font-weight: 600; border-color: var(--gold); }
+
+  /* ---- Layout --------------------------------------------------------- */
+  .app-body {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: calc(100vh - 90px);
+  }
+  @media (max-width: 820px) {
+    .app-body { grid-template-columns: 1fr; }
+  }
+
+  nav.module-nav {
+    background: var(--pitch-green-900);
+    border-right: 1px solid var(--pitch-green-700);
+    padding: 1rem 0.75rem;
+  }
+  @media (max-width: 820px) {
+    nav.module-nav {
+      border-right: none;
+      border-bottom: 1px solid var(--pitch-green-700);
+      display: flex;
+      overflow-x: auto;
+      gap: 0.4rem;
+      padding: 0.75rem;
+    }
+  }
+  .module-nav__list {
+    list-style: none;
+    margin: 0; padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  @media (max-width: 820px) {
+    .module-nav__list { flex-direction: row; }
+  }
+  .module-tab {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--floodlight-dim);
+    padding: 0.6rem 0.7rem;
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .module-tab:hover { background: var(--pitch-green-800); color: var(--floodlight); }
+  .module-tab[aria-selected="true"] {
+    background: var(--pitch-green-800);
+    color: var(--floodlight);
+    border-color: var(--gold);
+    box-shadow: inset 3px 0 0 var(--gold);
+  }
+  .module-tab__icon { font-size: 1.05rem; }
+
+  main.module-panel {
+    padding: 1.5rem;
+    max-width: 980px;
+  }
+  .panel-heading {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-size: 1.4rem;
+    margin: 0 0 0.25rem 0;
+  }
+  .panel-lede {
+    color: var(--floodlight-dim);
+    margin: 0 0 1.5rem 0;
+    max-width: 60ch;
+  }
+
+  .card {
+    background: linear-gradient(165deg, var(--pitch-green-900), var(--pitch-green-800) 140%);
+    border: 1px solid var(--pitch-green-700);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.03) inset, 0 8px 24px -12px rgba(0,0,0,0.6);
+    transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+  }
+
+  /* ---- Overview / hero dashboard --------------------------------------- */
+  .hero-card {
+    background: radial-gradient(120% 140% at 0% 0%, rgba(201,166,72,0.16), transparent 60%),
+                linear-gradient(155deg, var(--pitch-green-800), var(--pitch-green-900) 75%);
+    border: 1px solid var(--pitch-green-700);
+    border-radius: var(--radius);
+    padding: 1.6rem 1.5rem;
+    margin-bottom: 1.25rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-card::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, var(--gold) 0%, var(--assist-blue) 50%, var(--gold) 100%);
+    opacity: 0.9; height: 3px; top: 0; left: 0;
+  }
+  .hero-card__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+  .hero-card__eyebrow { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold-bright); margin: 0 0 0.4rem 0; }
+  .hero-card__title { font-family: var(--font-display); font-size: 1.7rem; text-transform: uppercase; letter-spacing: 0.02em; margin: 0 0 0.5rem 0; }
+  .hero-card__lede { color: var(--floodlight-dim); margin: 0; max-width: 56ch; font-size: 0.95rem; }
+  .hero-clock { font-family: var(--font-mono); font-size: 0.85rem; color: var(--floodlight-dim); text-align: right; white-space: nowrap; }
+  .hero-clock strong { display: block; color: var(--floodlight); font-size: 1.3rem; letter-spacing: 0.03em; }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+  }
+  @media (max-width: 720px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+  .stat-card {
+    background: rgba(10, 21, 18, 0.55);
+    border: 1px solid var(--pitch-green-700);
+    border-radius: 8px;
+    padding: 0.85rem 0.9rem;
+  }
+  .stat-card__value { font-family: var(--font-display); font-size: 1.5rem; color: var(--gold-bright); line-height: 1.1; }
+  .stat-card__label { font-size: 0.74rem; color: var(--floodlight-dim); margin-top: 0.15rem; }
+
+  .quick-tiles {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+  }
+  @media (max-width: 720px) { .quick-tiles { grid-template-columns: repeat(2, 1fr); } }
+  .quick-tile {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem;
+    background: var(--pitch-green-900);
+    border: 1px solid var(--pitch-green-700);
+    border-radius: var(--radius);
+    padding: 1rem;
+    text-align: left;
+    cursor: pointer;
+    color: var(--floodlight);
+    font-family: var(--font-body);
+    transition: transform var(--transition), border-color var(--transition), background var(--transition);
+  }
+  .quick-tile:hover { transform: translateY(-2px); border-color: var(--gold); background: var(--pitch-green-800); }
+  .quick-tile__icon { font-size: 1.4rem; }
+  .quick-tile__title { font-weight: 600; font-size: 0.92rem; }
+  .quick-tile__desc { font-size: 0.78rem; color: var(--floodlight-dim); line-height: 1.4; }
+
+  .section-heading {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--floodlight-dim);
+    margin: 1.5rem 0 0.75rem 0;
+  }
+
+  .empty-hint {
+    color: var(--floodlight-dim);
+    font-size: 0.85rem;
+    padding: 0.6rem 0;
+    font-style: italic;
+  }
+
+  .suggestion-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+  .suggestion-chip {
+    background: var(--pitch-green-800);
+    border: 1px solid var(--pitch-green-700);
+    color: var(--floodlight-dim);
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: border-color var(--transition), color var(--transition);
+  }
+  .suggestion-chip:hover { border-color: var(--gold); color: var(--floodlight); }
+
+  /* Scrollbars (webkit) */
+  .chat-log::-webkit-scrollbar, nav.module-nav::-webkit-scrollbar { width: 8px; height: 8px; }
+  .chat-log::-webkit-scrollbar-thumb { background: var(--pitch-green-700); border-radius: 8px; }
+  .chat-log::-webkit-scrollbar-track { background: transparent; }
+
+  label { display: block; font-size: 0.82rem; color: var(--floodlight-dim); margin-bottom: 0.3rem; }
+  input[type="text"], input[type="number"], select, textarea {
+    width: 100%;
+    background: var(--pitch-green-800);
+    border: 1px solid var(--pitch-green-700);
+    color: var(--floodlight);
+    padding: 0.6rem 0.7rem;
+    border-radius: 6px;
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+    margin-bottom: 0.9rem;
+  }
+  fieldset { border: 1px solid var(--pitch-green-700); border-radius: 8px; margin: 0 0 0.9rem 0; padding: 0.7rem 0.9rem; }
+  legend { padding: 0 0.4rem; font-size: 0.82rem; color: var(--floodlight-dim); }
+  .checkbox-row { display: flex; align-items: center; gap: 0.5rem; margin: 0.3rem 0; }
+  .checkbox-row input { width: auto; margin: 0; }
+  .checkbox-row label { margin: 0; color: var(--floodlight); font-size: 0.9rem; }
+
+  .btn-primary {
+    background: var(--gold);
+    color: var(--pitch-black);
+    border: none;
+    font-weight: 700;
+    padding: 0.7rem 1.3rem;
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+    cursor: pointer;
+  }
+  .btn-primary:hover { background: var(--gold-bright); }
+  .btn-primary:disabled { opacity: 0.6; cursor: progress; }
+
+  .result-box {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--pitch-green-800);
+    border-left: 3px solid var(--assist-blue);
+    border-radius: 0 8px 8px 0;
+  }
+  .result-box[data-severity="high"], .result-box[data-severity="critical"] { border-left-color: var(--alert-critical); }
+  .result-box[data-severity="medium"] { border-left-color: var(--alert-medium); }
+  .source-tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--pitch-black);
+    background: var(--floodlight-dim);
+    padding: 2px 7px;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+  }
+  .source-tag[data-source="genai"] { background: var(--assist-blue); color: var(--floodlight); }
+
+  .step-list { list-style: none; margin: 0; padding: 0; }
+  .step-list li {
+    display: flex; justify-content: space-between; gap: 1rem;
+    padding: 0.5rem 0; border-bottom: 1px dashed var(--pitch-green-700);
+    font-size: 0.9rem;
+  }
+  .step-list li:last-child { border-bottom: none; }
+  .crowd-chip { font-family: var(--font-mono); font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; }
+  .crowd-chip[data-level="low"] { background: rgba(76,175,125,0.2); color: var(--alert-low); }
+  .crowd-chip[data-level="moderate"] { background: rgba(245,185,66,0.2); color: var(--alert-medium); }
+  .crowd-chip[data-level="high"] { background: rgba(255,59,48,0.2); color: var(--alert-critical); }
+
+  /* ---- Stadium Pulse gauge (signature element) ------------------------- */
+  .pulse-wrap { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+  .pulse-ring { position: relative; width: 140px; height: 140px; flex-shrink: 0; }
+  .pulse-ring svg { transform: rotate(-90deg); }
+  .pulse-ring__bg { fill: none; stroke: var(--pitch-green-700); stroke-width: 10; }
+  .pulse-ring__value { fill: none; stroke: var(--gold); stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 500ms ease; }
+  .pulse-ring__label {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    font-family: var(--font-mono); font-size: 1.4rem; font-weight: 600;
+  }
+  .zone-input-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.5rem; align-items: end; }
+  .zone-row { display: contents; }
+
+  .alert-item { padding: 0.7rem 0.9rem; border-radius: 8px; margin-bottom: 0.5rem; font-size: 0.88rem; }
+  .alert-item[data-severity="critical"] { background: rgba(255,59,48,0.14); border: 1px solid var(--alert-critical); }
+  .alert-item[data-severity="high"] { background: rgba(255,107,74,0.14); border: 1px solid var(--alert-coral); }
+  .alert-item[data-severity="medium"] { background: rgba(245,185,66,0.12); border: 1px solid var(--alert-medium); }
+  .alert-item__meta { font-family: var(--font-mono); font-size: 0.7rem; text-transform: uppercase; color: var(--floodlight-dim); margin-bottom: 0.2rem; }
+
+  /* Chat */
+  .chat-log { max-height: 340px; overflow-y: auto; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
+  .chat-msg { padding: 0.6rem 0.85rem; border-radius: 10px; max-width: 80%; font-size: 0.9rem; }
+  .chat-msg[data-from="user"] { align-self: flex-end; background: var(--assist-blue); color: #fff; }
+  .chat-msg[data-from="ana"] { align-self: flex-start; background: var(--pitch-green-800); border: 1px solid var(--pitch-green-700); }
+  .chat-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 1rem; }
+  .chat-actions button { font-size: 0.75rem; padding: 4px 9px; }
+
+  .emergency-banner {
+    background: rgba(255,59,48,0.15);
+    border: 1px solid var(--alert-critical);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  footer.app-footer {
+    text-align: center;
+    padding: 1.5rem;
+    color: var(--floodlight-dim);
+    font-size: 0.78rem;
+    border-top: 1px solid var(--pitch-green-700);
+  }
+
+  .visually-hidden {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap;
+  }
+
+  [aria-live] { }
+  .loading-dot::after {
+    content: '…';
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main-panel">Skip to main content</a>
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker__track">
+    <span>GATE A · LOW CONGESTION</span><span class="dot">●</span>
+    <span>SHUTTLE LINE 2 · ON TIME</span><span class="dot">●</span>
+    <span>WELCOME · BIENVENIDOS · BIENVENUE · 歓迎 · स्वागत है</span><span class="dot">●</span>
+    <span>SUSTAINABILITY TIP · USE THE REUSABLE CUP SCHEME</span><span class="dot">●</span>
+    <span>ACCESSIBLE SEATING · SOUTH CONCOURSE · STEP-FREE</span><span class="dot">●</span>
+    <span>GATE A · LOW CONGESTION</span><span class="dot">●</span>
+    <span>SHUTTLE LINE 2 · ON TIME</span><span class="dot">●</span>
+    <span>WELCOME · BIENVENIDOS · BIENVENUE · 歓迎 · स्वागत है</span><span class="dot">●</span>
+  </div>
+</div>
+
+<header class="app-header">
+  <div class="brand">
+    <div class="brand__mark" aria-hidden="true">OS</div>
+    <div>
+      <p class="brand__title">StadiumOS GenAI</p>
+      <p class="brand__subtitle">FIFA World Cup 2026 · Operations &amp; Fan Experience Console</p>
+    </div>
+  </div>
+  <div class="toolbar" role="group" aria-label="Accessibility and connection controls">
+    <span id="apiStatus" class="status-pill" data-state="checking"><span class="status-pill__dot"></span><span id="apiStatusText">Checking backend…</span></span>
+    <button type="button" id="contrastToggle" aria-pressed="false">High contrast</button>
+    <button type="button" id="textSizeToggle" aria-pressed="false">Large text</button>
+    <label for="langSelect" class="visually-hidden">Interface language</label>
+    <select id="langSelect" aria-label="Assistant response language">
+      <option value="en">English</option>
+      <option value="es">Español</option>
+      <option value="fr">Français</option>
+      <option value="pt">Português</option>
+      <option value="de">Deutsch</option>
+      <option value="ar">العربية</option>
+      <option value="hi">हिन्दी</option>
+      <option value="zh">中文</option>
+      <option value="ja">日本語</option>
+      <option value="ko">한국어</option>
+    </select>
+  </div>
+</header>
+
+<div class="app-body">
+  <nav class="module-nav" aria-label="Feature modules">
+    <ul class="module-nav__list" role="tablist" aria-orientation="vertical" id="tabList">
+      <li role="presentation"><button class="module-tab" role="tab" id="tab-overview" aria-controls="panel-overview" aria-selected="true" data-module="overview"><span class="module-tab__icon" aria-hidden="true">🏟️</span> Overview</button></li>
+      <li role="presentation"><button class="module-tab" role="tab" id="tab-chat" aria-controls="panel-chat" aria-selected="false" data-module="chat"><span class="module-tab__icon" aria-hidden="true">💬</span> Ask Ana</button></li>
+      <li role="presentation"><button class="module-tab" role="tab" id="tab-navigate" aria-controls="panel-navigate" aria-selected="false" data-module="navigate"><span class="module-tab__icon" aria-hidden="true">🧭</span> Navigate</button></li>
+      <li role="presentation"><button class="module-tab" role="tab" id="tab-crowd" aria-controls="panel-crowd" aria-selected="false" data-module="crowd"><span class="module-tab__icon" aria-hidden="true">📊</span> Crowd Pulse</button></li>
+      <li role="presentation"><button class="module-tab" role="tab" id="tab-transport" aria-controls="panel-transport" aria-selected="false" data-module="transport"><span class="module-tab__icon" aria-hidden="true">🚌</span> Transport</button></li>
+      <li role="presentation"><button class="module-tab" role="tab" id="tab-accessibility" aria-controls="panel-accessibility" aria-selected="false" data-module="accessibility"><span class="module-tab__icon" aria-hidden="true">♿</span> Accessibility</button></li>
+      <li role="presentation"><button class="module-tab" role="tab" id="tab-sustainability" aria-controls="panel-sustainability" aria-selected="false" data-module="sustainability"><span class="module-tab__icon" aria-hidden="true">🌱</span> Sustainability</button></li>
+      <li role="presentation"><button class="module-tab" role="tab" id="tab-emergency" aria-controls="panel-emergency" aria-selected="false" data-module="emergency"><span class="module-tab__icon" aria-hidden="true">🚨</span> Emergency</button></li>
+    </ul>
+  </nav>
+
+  <main class="module-panel" id="main-panel">
+
+    <!-- OVERVIEW -->
+    <section id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" tabindex="0">
+      <div class="hero-card">
+        <div class="hero-card__top">
+          <div>
+            <p class="hero-card__eyebrow">FIFA World Cup 2026 · Host Venue Console</p>
+            <h1 class="hero-card__title">Matchday Operations Overview</h1>
+            <p class="hero-card__lede">Ana puts a GenAI reasoning layer over deterministic, safety-critical operational
+              logic — every answer below still works, correct and safe, even if the AI provider is unreachable.</p>
+          </div>
+          <div class="hero-clock">
+            <span id="heroDate">—</span>
+            <strong id="heroTime">--:--:--</strong>
+          </div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-card__value">48 / 104</div><div class="stat-card__label">Teams / matches, WC 2026</div></div>
+          <div class="stat-card"><div class="stat-card__value">16</div><div class="stat-card__label">Host cities, 3 countries</div></div>
+          <div class="stat-card"><div class="stat-card__value">7</div><div class="stat-card__label">GenAI-enabled modules</div></div>
+          <div class="stat-card"><div class="stat-card__value">10</div><div class="stat-card__label">Languages supported</div></div>
+        </div>
+      </div>
+
+      <p class="section-heading">Jump to a module</p>
+      <div class="quick-tiles" id="overviewTiles" role="group" aria-label="Jump to a module">
+        <button type="button" class="quick-tile" data-jump="tab-chat"><span class="quick-tile__icon" aria-hidden="true">💬</span><span class="quick-tile__title">Ask Ana</span><span class="quick-tile__desc">Multilingual chat for any matchday question.</span></button>
+        <button type="button" class="quick-tile" data-jump="tab-navigate"><span class="quick-tile__icon" aria-hidden="true">🧭</span><span class="quick-tile__title">Navigate</span><span class="quick-tile__desc">Turn-by-turn wayfinding, step-free routes included.</span></button>
+        <button type="button" class="quick-tile" data-jump="tab-crowd"><span class="quick-tile__icon" aria-hidden="true">📊</span><span class="quick-tile__title">Crowd Pulse</span><span class="quick-tile__desc">Live-style occupancy monitoring and alerting.</span></button>
+        <button type="button" class="quick-tile" data-jump="tab-transport"><span class="quick-tile__icon" aria-hidden="true">🚌</span><span class="quick-tile__title">Transport</span><span class="quick-tile__desc">Compare parking, shuttle, and transit options.</span></button>
+        <button type="button" class="quick-tile" data-jump="tab-accessibility"><span class="quick-tile__icon" aria-hidden="true">♿</span><span class="quick-tile__title">Accessibility</span><span class="quick-tile__desc">Grounded guidance — never invented.</span></button>
+        <button type="button" class="quick-tile" data-jump="tab-sustainability"><span class="quick-tile__icon" aria-hidden="true">🌱</span><span class="quick-tile__title">Sustainability</span><span class="quick-tile__desc">Personalized, actionable green tips.</span></button>
+        <button type="button" class="quick-tile" data-jump="tab-emergency"><span class="quick-tile__icon" aria-hidden="true">🚨</span><span class="quick-tile__title">Emergency</span><span class="quick-tile__desc">Human-escalation-first safety guidance.</span></button>
+      </div>
+    </section>
+
+    <!-- CHAT -->
+    <section id="panel-chat" role="tabpanel" aria-labelledby="tab-chat" tabindex="0" hidden>
+      <h1 class="panel-heading">💬 Ask Ana</h1>
+      <p class="panel-lede">Your multilingual GenAI fan assistant. Ask about directions, accessibility, crowd conditions, transport, or anything else about matchday.</p>
+      <div class="card">
+        <div class="chat-log" id="chatLog" aria-live="polite" aria-label="Conversation with Ana"></div>
+        <div class="suggestion-row" id="chatSuggestions">
+          <button type="button" class="suggestion-chip" data-fill="How do I get to Gate B?">How do I get to Gate B?</button>
+          <button type="button" class="suggestion-chip" data-fill="Where is the nearest accessible seating?">Accessible seating nearby</button>
+          <button type="button" class="suggestion-chip" data-fill="Is Concourse North busy right now?">Is North busy right now?</button>
+          <button type="button" class="suggestion-chip" data-fill="What's the best way to get here without a car?">Best way here without a car</button>
+        </div>
+        <form id="chatForm">
+          <label for="chatInput">Message Ana</label>
+          <input type="text" id="chatInput" maxlength="1000" placeholder="e.g. How do I get to Gate B?" autocomplete="off" />
+          <button type="submit" class="btn-primary">Send</button>
+        </form>
+        <div class="chat-actions" id="chatActions"></div>
+      </div>
+    </section>
+
+    <!-- NAVIGATE -->
+    <section id="panel-navigate" role="tabpanel" aria-labelledby="tab-navigate" tabindex="0" hidden>
+      <h1 class="panel-heading">🧭 Navigate</h1>
+      <p class="panel-lede">AI-narrated turn-by-turn wayfinding across the venue, with accessible-route support.</p>
+      <div class="card">
+        <form id="navForm">
+          <label for="navOrigin">From</label>
+          <input type="text" id="navOrigin" list="zoneList" value="Gate A" />
+          <label for="navDest">To</label>
+          <input type="text" id="navDest" list="zoneList" value="Family Zone" />
+          <datalist id="zoneList">
+            <option value="Gate A"></option><option value="Gate B"></option><option value="Gate C"></option>
+            <option value="Concourse North"></option><option value="Concourse East"></option>
+            <option value="Concourse West"></option><option value="Concourse South"></option>
+            <option value="Section 101 120"></option><option value="Section 201 220"></option>
+            <option value="Section 301 320"></option><option value="Section 401 420"></option>
+            <option value="Accessible Seating"></option><option value="Family Zone"></option>
+            <option value="Food Court North"></option><option value="Medical Station"></option>
+            <option value="Press Zone"></option>
+          </datalist>
+          <fieldset>
+            <legend>Accessibility needs</legend>
+            <div class="checkbox-row"><input type="checkbox" id="needWheelchair" value="wheelchair" /><label for="needWheelchair">Wheelchair / step-free route</label></div>
+          </fieldset>
+          <button type="submit" class="btn-primary">Get route</button>
+        </form>
+        <div id="navResult" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- CROWD -->
+    <section id="panel-crowd" role="tabpanel" aria-labelledby="tab-crowd" tabindex="0" hidden>
+      <h1 class="panel-heading">📊 Crowd Pulse</h1>
+      <p class="panel-lede">Live-style occupancy readings feed a rule-based safety engine plus a GenAI operator briefing, so alerts fire even if the AI provider is unreachable.</p>
+      <div class="card pulse-wrap">
+        <div class="pulse-ring" aria-hidden="true">
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <circle class="pulse-ring__bg" cx="70" cy="70" r="60"></circle>
+            <circle class="pulse-ring__value" id="pulseCircle" cx="70" cy="70" r="60" stroke-dasharray="377" stroke-dashoffset="377"></circle>
+          </svg>
+          <div class="pulse-ring__label" id="pulseLabel">0%</div>
+        </div>
+        <div style="flex:1; min-width:220px;">
+          <p style="margin:0 0 0.4rem 0; color:var(--floodlight-dim); font-size:0.85rem;">Average occupancy across monitored zones</p>
+          <p style="margin:0; font-family: var(--font-mono); font-size:0.85rem;" id="pulseSummaryLine">Add zone readings to begin monitoring.</p>
+        </div>
+      </div>
+      <div class="card">
+        <form id="crowdForm">
+          <div id="zoneRows"></div>
+          <button type="button" class="btn-primary" id="addZoneBtn" style="background:var(--pitch-green-700); color: var(--floodlight); margin-bottom:0.8rem;">+ Add zone reading</button>
+          <br/>
+          <button type="submit" class="btn-primary">Analyze crowd</button>
+        </form>
+        <div id="crowdResult" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- TRANSPORT -->
+    <section id="panel-transport" role="tabpanel" aria-labelledby="tab-transport" tabindex="0" hidden>
+      <h1 class="panel-heading">🚌 Transport</h1>
+      <p class="panel-lede">Compare parking, shuttle, and public-transit options, ranked for you in real time — including live lot occupancy and step-free filtering.</p>
+      <div class="card">
+        <form id="transportForm">
+          <label for="transportMode">Mode</label>
+          <select id="transportMode">
+            <option value="">Any (compare all)</option>
+            <option value="car">Driving / parking</option>
+            <option value="shuttle">Shuttle</option>
+            <option value="transit">Public transit</option>
+          </select>
+          <label for="transportParty">Party size</label>
+          <input type="number" id="transportParty" min="1" max="20" value="1" />
+          <label for="transportKickoff">Minutes to kickoff (optional)</label>
+          <input type="number" id="transportKickoff" min="0" max="600" placeholder="e.g. 60" />
+          <fieldset>
+            <legend>Accessibility needs</legend>
+            <div class="checkbox-row"><input type="checkbox" id="transportWheelchair" value="wheelchair" /><label for="transportWheelchair">Wheelchair / step-free option</label></div>
+          </fieldset>
+          <button type="submit" class="btn-primary">Find best option</button>
+        </form>
+        <div id="transportResult" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- ACCESSIBILITY -->
+    <section id="panel-accessibility" role="tabpanel" aria-labelledby="tab-accessibility" tabindex="0" hidden>
+      <h1 class="panel-heading">♿ Accessibility Concierge</h1>
+      <p class="panel-lede">Ask about wheelchair routes, sensory rooms, assistive listening devices, or companion policies. Answers are grounded only in verified venue resources — never invented.</p>
+      <div class="card">
+        <form id="accForm">
+          <label for="accQuery">Your question</label>
+          <input type="text" id="accQuery" value="Where can I find accessible seating?" maxlength="500" />
+          <fieldset>
+            <legend>Your needs (optional)</legend>
+            <div class="checkbox-row"><input type="checkbox" class="accNeed" value="wheelchair" id="accWheelchair"/><label for="accWheelchair">Wheelchair user</label></div>
+            <div class="checkbox-row"><input type="checkbox" class="accNeed" value="low vision" id="accVision"/><label for="accVision">Low vision</label></div>
+            <div class="checkbox-row"><input type="checkbox" class="accNeed" value="hearing" id="accHearing"/><label for="accHearing">Deaf / hard of hearing</label></div>
+            <div class="checkbox-row"><input type="checkbox" class="accNeed" value="sensory sensitivity" id="accSensory"/><label for="accSensory">Sensory sensitivity</label></div>
+          </fieldset>
+          <button type="submit" class="btn-primary">Ask</button>
+        </form>
+        <div id="accResult" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- SUSTAINABILITY -->
+    <section id="panel-sustainability" role="tabpanel" aria-labelledby="tab-sustainability" tabindex="0" hidden>
+      <h1 class="panel-heading">🌱 Sustainability Tips</h1>
+      <p class="panel-lede">Personalized, actionable sustainability guidance for your matchday.</p>
+      <div class="card">
+        <form id="susForm">
+          <label for="susContext">Tell Ana about your trip</label>
+          <input type="text" id="susContext" value="I'm driving to the match with two friends" maxlength="300" />
+          <button type="submit" class="btn-primary">Get tips</button>
+        </form>
+        <div id="susResult" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- EMERGENCY -->
+    <section id="panel-emergency" role="tabpanel" aria-labelledby="tab-emergency" tabindex="0" hidden>
+      <h1 class="panel-heading">🚨 Emergency Decision Support</h1>
+      <div class="emergency-banner">
+        <strong>Not a replacement for emergency services.</strong> For any life-threatening emergency, contact stadium security or local emergency services immediately.
+      </div>
+      <div class="card">
+        <form id="emergForm">
+          <label for="emergSituation">Describe what's happening</label>
+          <input type="text" id="emergSituation" placeholder="e.g. A fan has collapsed near section 201" maxlength="300" />
+          <label for="emergZone">Zone (optional)</label>
+          <input type="text" id="emergZone" placeholder="e.g. Section 201" maxlength="40" />
+          <button type="submit" class="btn-primary" style="background:var(--alert-coral); color:#fff;">Get guidance</button>
+        </form>
+        <div id="emergResult" aria-live="assertive"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="app-footer">
+  StadiumOS GenAI — built for Hack2Skill Virtual Prompt War Challenge 4. Works fully offline in rule-based fallback mode; connect a backend for live GenAI responses.
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  // ------------------------------------------------------------------
+  // Configuration
+  // ------------------------------------------------------------------
+  const API_BASE = window.STADIUMOS_API_BASE || 'http://localhost:8000/api/v1';
+  const FETCH_TIMEOUT_MS = 4000;
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML;
+  }
+
+  async function callApi(path, body) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    try {
+      const res = await fetch(API_BASE + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (!res.ok) throw new Error('API error ' + res.status);
+      return await res.json();
+    } catch (err) {
+      clearTimeout(timer);
+      return null; // caller falls back to local demo logic
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Backend availability indicator
+  // ------------------------------------------------------------------
+  let backendOnline = false;
+  async function checkHealth() {
+    const pill = document.getElementById('apiStatus');
+    const text = document.getElementById('apiStatusText');
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2500);
+      const res = await fetch(API_BASE + '/health', { signal: controller.signal });
+      clearTimeout(timer);
+      if (res.ok) {
+        const data = await res.json();
+        backendOnline = true;
+        pill.dataset.state = 'online';
+        text.textContent = data.genai_available ? 'Live GenAI connected' : 'Backend connected (fallback mode)';
+        return;
+      }
+      throw new Error('not ok');
+    } catch (e) {
+      backendOnline = false;
+      pill.dataset.state = 'offline';
+      text.textContent = 'Offline demo mode (local logic)';
+    }
+  }
+  checkHealth();
+
+  // ------------------------------------------------------------------
+  // Accessibility toolbar controls
+  // ------------------------------------------------------------------
+  const html = document.documentElement;
+  document.getElementById('contrastToggle').addEventListener('click', function (e) {
+    const pressed = e.target.getAttribute('aria-pressed') === 'true';
+    e.target.setAttribute('aria-pressed', String(!pressed));
+    html.dataset.contrast = !pressed ? 'high' : 'normal';
+  });
+  document.getElementById('textSizeToggle').addEventListener('click', function (e) {
+    const sizes = ['normal', 'large', 'xlarge'];
+    const current = html.dataset.textsize || 'normal';
+    const next = sizes[(sizes.indexOf(current) + 1) % sizes.length];
+    html.dataset.textsize = next;
+    e.target.setAttribute('aria-pressed', String(next !== 'normal'));
+    e.target.textContent = next === 'normal' ? 'Large text' : (next === 'large' ? 'Larger text ✓' : 'Largest text ✓✓');
+  });
+
+  function currentLang() { return document.getElementById('langSelect').value; }
+
+  // ------------------------------------------------------------------
+  // Tab / module switching (full keyboard support: arrow keys, home/end)
+  // ------------------------------------------------------------------
+  const tabs = Array.from(document.querySelectorAll('.module-tab'));
+  function selectTab(tab) {
+    tabs.forEach(t => {
+      const selected = t === tab;
+      t.setAttribute('aria-selected', String(selected));
+      const panel = document.getElementById(t.getAttribute('aria-controls'));
+      if (panel) panel.hidden = !selected;
+    });
+    tab.focus();
+  }
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => selectTab(tab));
+    tab.addEventListener('keydown', (e) => {
+      let idx = null;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') idx = (i + 1) % tabs.length;
+      else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') idx = (i - 1 + tabs.length) % tabs.length;
+      else if (e.key === 'Home') idx = 0;
+      else if (e.key === 'End') idx = tabs.length - 1;
+      if (idx !== null) { e.preventDefault(); selectTab(tabs[idx]); }
+    });
+  });
+
+  // ------------------------------------------------------------------
+  // Overview — hero clock + quick-jump tiles
+  // ------------------------------------------------------------------
+  function tickHeroClock() {
+    const now = new Date();
+    const dateEl = document.getElementById('heroDate');
+    const timeEl = document.getElementById('heroTime');
+    if (dateEl) dateEl.textContent = now.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+    if (timeEl) timeEl.textContent = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+  tickHeroClock();
+  setInterval(tickHeroClock, 1000);
+
+  document.querySelectorAll('.quick-tile[data-jump]').forEach(function (tile) {
+    tile.addEventListener('click', function () {
+      const target = document.getElementById(tile.getAttribute('data-jump'));
+      if (target) selectTab(target);
+    });
+  });
+
+  document.querySelectorAll('.suggestion-chip[data-fill]').forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      const input = document.getElementById('chatInput');
+      input.value = chip.getAttribute('data-fill');
+      input.focus();
+      document.getElementById('chatForm').requestSubmit();
+    });
+  });
+
+  // ------------------------------------------------------------------
+  // Local (offline) fallback logic — mirrors backend rule-based fallback
+  // so the console is fully demoable with zero backend / zero API key.
+  // ------------------------------------------------------------------
+  const STADIUM_GRAPH = {
+    gate_a: { name: 'Gate A (Main Entrance)', accessible: true, neighbors: [['concourse_north', 2]] },
+    gate_b: { name: 'Gate B (East Entrance)', accessible: true, neighbors: [['concourse_east', 2]] },
+    gate_c: { name: 'Gate C (West Entrance)', accessible: false, neighbors: [['concourse_west', 2]] },
+    concourse_north: { name: 'North Concourse', accessible: true, neighbors: [['gate_a', 2], ['section_101_120', 3], ['food_court_north', 1], ['concourse_east', 4]] },
+    concourse_east: { name: 'East Concourse', accessible: true, neighbors: [['gate_b', 2], ['section_201_220', 3], ['family_zone', 2], ['concourse_north', 4], ['concourse_south', 4]] },
+    concourse_west: { name: 'West Concourse', accessible: false, neighbors: [['gate_c', 2], ['section_301_320', 4], ['press_zone', 2], ['concourse_south', 4]] },
+    concourse_south: { name: 'South Concourse', accessible: true, neighbors: [['section_401_420', 3], ['accessible_seating', 1], ['medical_station', 1], ['concourse_east', 4], ['concourse_west', 4]] },
+    section_101_120: { name: 'Lower Bowl North (101-120)', accessible: true, neighbors: [['concourse_north', 3]] },
+    section_201_220: { name: 'Lower Bowl East (201-220)', accessible: true, neighbors: [['concourse_east', 3]] },
+    section_301_320: { name: 'Upper Bowl West (301-320)', accessible: false, neighbors: [['concourse_west', 4]] },
+    section_401_420: { name: 'Lower Bowl South (401-420)', accessible: true, neighbors: [['concourse_south', 3]] },
+    accessible_seating: { name: 'Accessible Seating Platform', accessible: true, neighbors: [['concourse_south', 1]] },
+    family_zone: { name: 'Family & Fan Zone', accessible: true, neighbors: [['concourse_east', 2]] },
+    food_court_north: { name: 'North Food Court', accessible: true, neighbors: [['concourse_north', 1]] },
+    medical_station: { name: 'Medical Station', accessible: true, neighbors: [['concourse_south', 1]] },
+    press_zone: { name: 'Media & Press Zone', accessible: false, neighbors: [['concourse_west', 2]] },
+  };
+  function slug(s) { return s.trim().toLowerCase().replace(/[\s-]+/g, '_'); }
+  function localShortestPath(origin, dest, avoid) {
+    avoid = avoid || [];
+    if (!STADIUM_GRAPH[origin] || !STADIUM_GRAPH[dest]) return null;
+    const dist = { [origin]: 0 }, prev = {}, visited = new Set();
+    const queue = [[0, origin]];
+    while (queue.length) {
+      queue.sort((a, b) => a[0] - b[0]);
+      const [d, node] = queue.shift();
+      if (visited.has(node)) continue;
+      visited.add(node);
+      if (node === dest) break;
+      for (const [nb, w] of STADIUM_GRAPH[node].neighbors) {
+        if (avoid.includes(nb) && nb !== dest) continue;
+        const nd = d + w;
+        if (dist[nb] === undefined || nd < dist[nb]) { dist[nb] = nd; prev[nb] = node; queue.push([nd, nb]); }
+      }
+    }
+    if (dist[dest] === undefined) return null;
+    const path = [dest];
+    while (path[path.length - 1] !== origin) path.push(prev[path[path.length - 1]]);
+    path.reverse();
+    return { path, minutes: dist[dest] };
+  }
+
+  // ------------------------------------------------------------------
+  // CHAT
+  // ------------------------------------------------------------------
+  const chatLog = document.getElementById('chatLog');
+  const chatActions = document.getElementById('chatActions');
+  function addChatMsg(from, text) {
+    const div = document.createElement('div');
+    div.className = 'chat-msg';
+    div.dataset.from = from;
+    div.textContent = text;
+    chatLog.appendChild(div);
+    chatLog.scrollTop = chatLog.scrollHeight;
+  }
+  addChatMsg('ana', "Hi! I'm Ana, your matchday assistant. Ask me about directions, accessibility, crowds, or transport.");
+
+  const ACTION_LABELS = {
+    open_navigation: '🧭 Open Navigate', open_accessibility: '♿ Open Accessibility',
+    open_crowd_dashboard: '📊 Open Crowd Pulse', open_transport: '🚌 Open Transport',
+  };
+  function renderChatActions(actions) {
+    chatActions.innerHTML = '';
+    (actions || []).forEach(a => {
+      if (!ACTION_LABELS[a]) return;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = ACTION_LABELS[a];
+      btn.addEventListener('click', () => {
+        const map = { open_navigation: 'tab-navigate', open_accessibility: 'tab-accessibility', open_crowd_dashboard: 'tab-crowd', open_transport: 'tab-transport' };
+        selectTab(document.getElementById(map[a]));
+      });
+      chatActions.appendChild(btn);
+    });
+  }
+
+  function localChatFallback(message) {
+    const m = message.toLowerCase();
+    const actions = [];
+    if (/(gate|seat|section|where|get to)/.test(m)) actions.push('open_navigation');
+    if (/(wheelchair|accessible|disab|hearing|vision)/.test(m)) actions.push('open_accessibility');
+    if (/(crowd|busy|queue|line)/.test(m)) actions.push('open_crowd_dashboard');
+    if (/(bus|train|parking|shuttle|transport)/.test(m)) actions.push('open_transport');
+    return {
+      reply: "I can help with directions, accessibility, crowd conditions, and transport. Try the module tabs on the left, or ask me something like 'How do I get to Gate B?'",
+      suggested_actions: actions,
+    };
+  }
+
+  document.getElementById('chatForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const input = document.getElementById('chatInput');
+    const msg = input.value.trim();
+    if (!msg) return;
+    addChatMsg('user', msg);
+    input.value = '';
+    addChatMsg('ana', 'Thinking…');
+    const thinkingEl = chatLog.lastChild;
+
+    const apiResult = await callApi('/chat', { message: msg, language: currentLang(), role: 'fan' });
+    const result = apiResult || localChatFallback(msg);
+    thinkingEl.remove();
+    addChatMsg('ana', result.reply);
+    renderChatActions(result.suggested_actions);
+  });
+
+  // ------------------------------------------------------------------
+  // NAVIGATE
+  // ------------------------------------------------------------------
+  document.getElementById('navForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const origin = document.getElementById('navOrigin').value;
+    const dest = document.getElementById('navDest').value;
+    const wheelchair = document.getElementById('needWheelchair').checked;
+    const resultBox = document.getElementById('navResult');
+    resultBox.innerHTML = '<p class="loading-dot">Finding route</p>';
+
+    const apiResult = await callApi('/navigate', {
+      origin, destination: dest,
+      accessibility_needs: wheelchair ? ['wheelchair'] : [],
+      language: currentLang(),
+    });
+
+    let payload = apiResult;
+    if (!payload) {
+      const o = slug(origin), d = slug(dest);
+      const avoid = wheelchair ? Object.keys(STADIUM_GRAPH).filter(k => !STADIUM_GRAPH[k].accessible) : [];
+      const found = localShortestPath(o, d, avoid);
+      if (!found) {
+        payload = { steps: [], narrative: `I couldn't find a match for "${origin}" or "${dest}" on the venue map. Try a gate name or a landmark like "Family Zone".`, source: 'fallback' };
+      } else {
+        const steps = [];
+        for (let i = 0; i < found.path.length - 1; i++) {
+          const cur = found.path[i], nxt = found.path[i + 1];
+          const weight = STADIUM_GRAPH[cur].neighbors.find(n => n[0] === nxt)[1];
+          steps.push({ instruction: `From ${STADIUM_GRAPH[cur].name}, proceed to ${STADIUM_GRAPH[nxt].name}.`, estimated_minutes: weight, crowd_level: ['low', 'moderate', 'high'][Math.floor(Math.random() * 3)] });
+        }
+        payload = { steps, total_minutes: found.minutes, narrative: steps.map(s => s.instruction).join(' '), source: 'fallback', accessible: found.path.every(z => STADIUM_GRAPH[z].accessible) };
+      }
+    }
+
+    if (!payload.steps || !payload.steps.length) {
+      resultBox.innerHTML = `<div class="result-box"><span class="source-tag" data-source="${payload.source}">${payload.source}</span><p>${escapeHtml(payload.narrative)}</p></div>`;
+      return;
+    }
+    const stepsHtml = payload.steps.map(s => `<li><span>${escapeHtml(s.instruction)}</span><span class="crowd-chip" data-level="${escapeHtml(s.crowd_level)}">${escapeHtml(s.crowd_level)}</span></li>`).join('');
+    resultBox.innerHTML = `
+      <div class="result-box">
+        <span class="source-tag" data-source="${payload.source}">${payload.source}</span>
+        <p>${escapeHtml(payload.narrative)}</p>
+        <ul class="step-list">${stepsHtml}</ul>
+        <p style="font-family:var(--font-mono); font-size:0.8rem; margin-top:0.5rem;">Est. total time: ${payload.total_minutes} min ${payload.accessible ? '· ♿ Step-free route' : ''}</p>
+      </div>`;
+  });
+
+  // ------------------------------------------------------------------
+  // CROWD
+  // ------------------------------------------------------------------
+  const zoneRows = document.getElementById('zoneRows');
+  let zoneCount = 0;
+  function addZoneRow(name, occ) {
+    zoneCount++;
+    const id = 'zone' + zoneCount;
+    const wrap = document.createElement('div');
+    wrap.className = 'zone-input-grid';
+    wrap.style.marginBottom = '0.5rem';
+    wrap.innerHTML = `
+      <div><label for="${id}-name">Zone name</label><input type="text" id="${id}-name" value="${escapeHtml(name)}" /></div>
+      <div><label for="${id}-occ">Occupancy %</label><input type="text" inputmode="numeric" id="${id}-occ" value="${occ}" /></div>
+      <div><button type="button" class="btn-primary" style="background:var(--pitch-green-700); color:var(--floodlight); padding:0.55rem 0.7rem;" aria-label="Remove this zone">✕</button></div>`;
+    wrap.querySelector('button').addEventListener('click', () => wrap.remove());
+    zoneRows.appendChild(wrap);
+  }
+  addZoneRow('Gate A', 65);
+  addZoneRow('Concourse North', 92);
+  document.getElementById('addZoneBtn').addEventListener('click', () => addZoneRow('New Zone', 50));
+
+  function classifyOccupancy(occ) {
+    if (occ >= 95) return ['critical', 'Immediate action required: halt inflow and open overflow route.'];
+    if (occ >= 85) return ['high', 'Deploy additional stewards and open an alternate concourse.'];
+    if (occ >= 70) return ['medium', 'Monitor closely; consider soft crowd redirection.'];
+    return ['low', 'No action required.'];
+  }
+
+  function updatePulse(avg) {
+    const circle = document.getElementById('pulseCircle');
+    const circumference = 377;
+    const offset = circumference - (Math.min(avg, 100) / 100) * circumference;
+    circle.style.strokeDashoffset = offset;
+    if (avg >= 85) circle.style.stroke = 'var(--alert-critical)';
+    else if (avg >= 70) circle.style.stroke = 'var(--alert-medium)';
+    else circle.style.stroke = 'var(--gold)';
+    document.getElementById('pulseLabel').textContent = Math.round(avg) + '%';
+  }
+
+  document.getElementById('crowdForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const rows = Array.from(zoneRows.children);
+    const zones = rows.map(r => ({
+      zone_id: r.querySelector('input[id$="-name"]').value || 'zone',
+      occupancy_percent: Math.max(0, Math.min(100, parseFloat(r.querySelector('input[id$="-occ"]').value) || 0)),
+    })).filter(z => z.zone_id);
+
+    const resultBox = document.getElementById('crowdResult');
+    resultBox.innerHTML = '<p class="loading-dot">Analyzing</p>';
+
+    if (zones.length) {
+      updatePulse(zones.reduce((a, z) => a + z.occupancy_percent, 0) / zones.length);
+    }
+
+    const apiResult = await callApi('/crowd/analyze', { zones, event_phase: 'in-match' });
+    let payload = apiResult;
+    if (!payload) {
+      const alerts = zones.map(z => {
+        const [severity, action] = classifyOccupancy(z.occupancy_percent);
+        return severity === 'low' ? null : { zone_id: z.zone_id, severity, message: `${z.zone_id} is at ${z.occupancy_percent.toFixed(0)}% capacity.`, recommended_action: action };
+      }).filter(Boolean);
+      const order = { critical: 0, high: 1, medium: 2 };
+      alerts.sort((a, b) => order[a.severity] - order[b.severity]);
+      const summary = alerts.length ? `${alerts.length} zone(s) require attention. Highest priority: ${alerts[0].message}` : 'All monitored zones are within safe capacity thresholds.';
+      payload = { alerts, overall_summary: summary, source: 'fallback' };
+    }
+
+    document.getElementById('pulseSummaryLine').textContent = payload.overall_summary;
+    const alertsHtml = payload.alerts.length
+      ? payload.alerts.map(a => `<div class="alert-item" data-severity="${escapeHtml(a.severity)}"><div class="alert-item__meta">${escapeHtml(a.severity)} · ${escapeHtml(a.zone_id)}</div><div>${escapeHtml(a.message)}</div><div style="margin-top:0.3rem; font-weight:600;">→ ${escapeHtml(a.recommended_action)}</div></div>`).join('')
+      : '<p>No active alerts. All zones nominal.</p>';
+    resultBox.innerHTML = `<div class="result-box" data-severity="${payload.alerts[0] ? payload.alerts[0].severity : 'low'}"><span class="source-tag" data-source="${payload.source}">${payload.source}</span><p>${escapeHtml(payload.overall_summary)}</p>${alertsHtml}</div>`;
+  });
+
+  // ------------------------------------------------------------------
+  // TRANSPORT — local fallback mirrors app/data/transit.py + app/services/transport.py
+  // ------------------------------------------------------------------
+  const PARKING_LOTS = {
+    lot_north: { name: 'North Lot (P1)', capacity: 1200, occupied: 1140, walkMinutes: 6, gate: 'Gate A', accessibleSpaces: 40, accessibleOccupied: 22 },
+    lot_east: { name: 'East Lot (P2)', capacity: 900, occupied: 540, walkMinutes: 8, gate: 'Gate B', accessibleSpaces: 30, accessibleOccupied: 11 },
+    lot_south_overflow: { name: 'South Overflow Lot (P3)', capacity: 1500, occupied: 300, walkMinutes: 15, gate: 'Gate C', accessibleSpaces: 25, accessibleOccupied: 4 },
+  };
+  const TRANSIT_LINES = {
+    shuttle_1: { name: 'Shuttle Line 1 — Downtown Hub', mode: 'shuttle', frequency: 8, walkMinutes: 2, pickup: 'North Transit Hub', gate: 'Gate A', accessible: true, status: 'on_time' },
+    shuttle_2: { name: 'Shuttle Line 2 — Riverside Park & Ride', mode: 'shuttle', frequency: 8, walkMinutes: 2, pickup: 'Riverside Park & Ride', gate: 'Gate B', accessible: true, status: 'on_time' },
+    metro_blue: { name: 'Metro Blue Line — Stadium Station', mode: 'transit', frequency: 6, walkMinutes: 9, pickup: 'Stadium Station', gate: 'Gate B', accessible: true, status: 'on_time' },
+    rail_express: { name: 'Regional Rail Express — Matchday Special', mode: 'transit', frequency: 20, walkMinutes: 12, pickup: 'Central Station', gate: 'Gate C', accessible: false, status: 'on_time' },
+  };
+  function localTransportOptions(mode, needsAccessible) {
+    const options = [];
+    if (!mode || mode === 'car') {
+      Object.entries(PARKING_LOTS).forEach(([id, lot]) => {
+        const occPct = Math.round((lot.occupied / lot.capacity) * 1000) / 10;
+        const freeAccessible = Math.max(0, lot.accessibleSpaces - lot.accessibleOccupied);
+        if (needsAccessible && freeAccessible <= 0) return;
+        const status = occPct >= 98 ? 'full' : (occPct >= 90 ? 'near_full' : 'available');
+        let detail = `${occPct.toFixed(0)}% full, ${lot.walkMinutes} min walk to ${lot.gate}.`;
+        if (needsAccessible) detail += ` ${freeAccessible} accessible space(s) free.`;
+        options.push({ option_id: id, mode: 'car', name: lot.name, detail, eta_minutes: lot.walkMinutes, accessible: freeAccessible > 0, status });
+      });
+    }
+    ['shuttle', 'transit'].forEach(m => {
+      if (mode && mode !== m) return;
+      Object.entries(TRANSIT_LINES).filter(([, l]) => l.mode === m).forEach(([id, line]) => {
+        if (needsAccessible && !line.accessible) return;
+        const eta = Math.round((line.frequency / 2 + line.walkMinutes) * 10) / 10;
+        const detail = `Every ${line.frequency} min from ${line.pickup}, ${line.walkMinutes} min walk to ${line.gate}.`;
+        options.push({ option_id: id, mode: m, name: line.name, detail, eta_minutes: eta, accessible: line.accessible, status: line.status });
+      });
+    });
+    const bad = new Set(['full', 'suspended']);
+    options.sort((a, b) => (bad.has(a.status) ? 1 : 0) - (bad.has(b.status) ? 1 : 0) || a.eta_minutes - b.eta_minutes);
+    return options;
+  }
+  const MODE_ICON = { car: '🚗', shuttle: '🚌', transit: '🚆' };
+  document.getElementById('transportForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const mode = document.getElementById('transportMode').value || null;
+    const partySize = Math.max(1, Math.min(20, parseInt(document.getElementById('transportParty').value, 10) || 1));
+    const kickoffRaw = document.getElementById('transportKickoff').value;
+    const minutesToKickoff = kickoffRaw === '' ? null : Math.max(0, parseInt(kickoffRaw, 10) || 0);
+    const needsAccessible = document.getElementById('transportWheelchair').checked;
+    const resultBox = document.getElementById('transportResult');
+    resultBox.innerHTML = '<p class="loading-dot">Comparing options</p>';
+
+    const apiResult = await callApi('/transport', {
+      mode, party_size: partySize, minutes_to_kickoff: minutesToKickoff,
+      accessibility_needs: needsAccessible ? ['wheelchair'] : [], language: currentLang(),
+    });
+    let payload = apiResult;
+    if (!payload) {
+      const options = localTransportOptions(mode, needsAccessible);
+      const best = options[0];
+      const summary = !options.length
+        ? (needsAccessible ? 'No accessible transport options currently match your needs. Please check with Guest Services.' : 'No transport options currently match your filters.')
+        : `Best option: ${best.name} — ${best.detail}`;
+      payload = { options, recommended_option_id: best ? best.option_id : null, summary, source: 'fallback' };
+    }
+
+    const optionsHtml = payload.options.map(o => `
+      <div class="alert-item" data-severity="${o.status === 'full' || o.status === 'suspended' ? 'critical' : (o.status === 'near_full' || o.status === 'delayed' ? 'medium' : 'low')}">
+        <div class="alert-item__meta">${MODE_ICON[o.mode] || ''} ${escapeHtml(o.mode)} · ${escapeHtml(o.status.replace('_', ' '))}${o.option_id === payload.recommended_option_id ? ' · ★ recommended' : ''}</div>
+        <div style="font-weight:600;">${escapeHtml(o.name)}</div>
+        <div>${escapeHtml(o.detail)}</div>
+      </div>`).join('');
+    resultBox.innerHTML = `<div class="result-box"><span class="source-tag" data-source="${payload.source}">${payload.source}</span><p>${escapeHtml(payload.summary)}</p>${optionsHtml || '<p>No matching options.</p>'}</div>`;
+  });
+
+  // ------------------------------------------------------------------
+  // ACCESSIBILITY
+  // ------------------------------------------------------------------
+  const STATIC_RESOURCES = [
+    'Accessible Seating Platform — South Concourse, step-free from Gate A/B/D',
+    'Sensory Room — quiet, low-light space near the Family Zone for neurodivergent fans',
+    'Wheelchair loan desk — Gate A Guest Services, no reservation required',
+    'Assistive listening devices — available at any Guest Services desk',
+    'Companion/carer free-entry policy — present accessibility documentation at any gate',
+  ];
+  document.getElementById('accForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const query = document.getElementById('accQuery').value;
+    const needs = Array.from(document.querySelectorAll('.accNeed:checked')).map(c => c.value);
+    const resultBox = document.getElementById('accResult');
+    resultBox.innerHTML = '<p class="loading-dot">Looking that up</p>';
+
+    const apiResult = await callApi('/accessibility', { query, needs, language: currentLang() });
+    const payload = apiResult || {
+      guidance: `For ${needs.length ? needs.join(', ') : 'your accessibility needs'}, the Accessible Seating Platform on the South Concourse is step-free from Gates A, B and D. Guest Services desks near every gate can arrange a wheelchair escort, assistive listening device, or sensory-room access on request.`,
+      resources: STATIC_RESOURCES, source: 'fallback',
+    };
+    resultBox.innerHTML = `<div class="result-box"><span class="source-tag" data-source="${payload.source}">${payload.source}</span><p>${escapeHtml(payload.guidance)}</p><ul class="step-list">${payload.resources.map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ul></div>`;
+  });
+
+  // ------------------------------------------------------------------
+  // SUSTAINABILITY
+  // ------------------------------------------------------------------
+  document.getElementById('susForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const context = document.getElementById('susContext').value;
+    const resultBox = document.getElementById('susResult');
+    resultBox.innerHTML = '<p class="loading-dot">Thinking of ideas</p>';
+
+    const apiResult = await callApi('/sustainability', { context });
+    const payload = apiResult || {
+      tips: [
+        'Use the reusable cup scheme at any concession stand to skip single-use plastics.',
+        'Take the shuttle or metro — parking near the stadium is limited and transit cuts per-fan emissions sharply.',
+        'Sort waste at the clearly marked tri-bin stations throughout the concourse.',
+      ], source: 'fallback',
+    };
+    resultBox.innerHTML = `<div class="result-box"><span class="source-tag" data-source="${payload.source}">${payload.source}</span><ul class="step-list">${payload.tips.map(t => `<li>🌱 ${escapeHtml(t)}</li>`).join('')}</ul></div>`;
+  });
+
+  // ------------------------------------------------------------------
+  // EMERGENCY
+  // ------------------------------------------------------------------
+  const ESCALATE_KEYWORDS = ['fire', 'collapse', 'weapon', 'gun', 'knife', 'unconscious', 'cardiac', 'chest pain', 'seizure', 'bleeding', 'stampede', 'crush', 'bomb', 'explosion'];
+  document.getElementById('emergForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const situation = document.getElementById('emergSituation').value;
+    const zone = document.getElementById('emergZone').value;
+    const resultBox = document.getElementById('emergResult');
+    resultBox.innerHTML = '<p class="loading-dot">Getting guidance</p>';
+
+    const apiResult = await callApi('/emergency', { situation, zone_id: zone || null, language: currentLang() });
+    const mustEscalate = ESCALATE_KEYWORDS.some(k => situation.toLowerCase().includes(k));
+    const payload = apiResult || {
+      instructions: mustEscalate
+        ? ['This situation requires immediate human responder attention — contact the control room now.', 'Stay calm and move away from the immediate area if safe to do so.', 'Alert the nearest steward or staff member in a high-visibility vest.']
+        : ['Stay calm and move away from the immediate area if safe to do so.', 'Alert the nearest steward or staff member in a high-visibility vest.', 'Do not re-enter a cleared area until stewards confirm it is safe.'],
+      escalate_to_human: mustEscalate, hotline: 'Stadium Emergency Control Room: internal ext. 4444 / radio channel 1', source: 'fallback',
+    };
+    resultBox.innerHTML = `
+      <div class="result-box" data-severity="${payload.escalate_to_human ? 'critical' : 'low'}">
+        <span class="source-tag" data-source="${payload.source}">${payload.source}</span>
+        ${payload.escalate_to_human ? '<p style="color:var(--alert-critical); font-weight:700;">⚠ HUMAN RESPONDER REQUIRED</p>' : ''}
+        <ul class="step-list">${payload.instructions.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>
+        <p style="font-family:var(--font-mono); font-size:0.8rem; margin-top:0.5rem;">${escapeHtml(payload.hotline)}</p>
+      </div>`;
+  });
+
+})();
+</script>
+</body>
+</html>

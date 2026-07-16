@@ -1,0 +1,11 @@
+# Ruff configuration for backend
+line-length = 120
+target-version = "py312"
+
+[lint]
+select = ["E", "F", "I", "B", "C4", "UP"]
+ignore = ["E501", "B008"]
+
+[lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/*" = ["E501"]

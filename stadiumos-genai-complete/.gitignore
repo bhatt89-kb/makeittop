@@ -1,0 +1,49 @@
+# Environment Variables (NEVER commit!)
+backend/.env
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+*.cover
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Docker
+*.log
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Redis data
+dump.rdb
+
+# Temporary files
+*.tmp
+*.bak
