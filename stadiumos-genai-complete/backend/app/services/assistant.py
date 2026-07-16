@@ -284,6 +284,18 @@ async def chat(req: ChatRequest) -> ChatResponse:
 
 def _get_welcome_message(language: str) -> str:
     """
+    Generate contextual welcome message with immediate value.
+    
+    Instead of generic "How can I help?", provide actionable guidance
+    that demonstrates the assistant's capabilities.
+    
+    Args:
+        language: Target language code
+    
+    Returns:
+        Welcome message that shows value without listing capabilities
+    """
+    """
     Return a warm, non-repetitive welcome message in the requested language.
     
     Args:
